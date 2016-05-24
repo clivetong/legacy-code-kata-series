@@ -57,77 +57,78 @@ namespace GildedRose.Console
 
         public static void UpdateQuality(Item[] items)
         {
-            for (var i = 0; i < items.Length; i++)
+            foreach (var currentItem in items)
             {
-                if (items[i].Name != "Aged Brie" && items[i].Name != "Backstage passes to a TAFKAL80ETC concert")
+                switch (currentItem.Name)
                 {
-                    if (items[i].Quality > 0)
-                    {
-                        if (items[i].Name != "Sulfuras, Hand of Ragnaros")
-                        {
-                            items[i].Quality = items[i].Quality - 1;
-                        }
-                    }
-                }
-                else
-                {
-                    if (items[i].Quality < 50)
-                    {
-                        items[i].Quality = items[i].Quality + 1;
+                    case ("Aged Brie"):
+                        AdjustQualityIfLessThan50(currentItem, QualityAdjustment(currentItem));
+                        DecrementSellinAndDoIfNegative(currentItem, () => AdjustQualityIfLessThan50(currentItem));
+                        break;
 
-                        if (items[i].Name == "Backstage passes to a TAFKAL80ETC concert")
-                        {
-                            if (items[i].SellIn < 11)
-                            {
-                                if (items[i].Quality < 50)
-                                {
-                                    items[i].Quality = items[i].Quality + 1;
-                                }
-                            }
+                    case ("Backstage passes to a TAFKAL80ETC concert"):
+                        AdjustQualityIfLessThan50(currentItem, QualityAdjustment(currentItem));
+                        DecrementSellinAndDoIfNegative(currentItem, () => { currentItem.Quality = 0; });
+                        break;
 
-                            if (items[i].SellIn < 6)
-                            {
-                                if (items[i].Quality < 50)
-                                {
-                                    items[i].Quality = items[i].Quality + 1;
-                                }
-                            }
-                        }
-                    }
+                    case "Sulfuras, Hand of Ragnaros":
+                        break;
+
+                    default:
+                        DecrementQualityIfNonZero(currentItem);
+                        DecrementSellinAndDoIfNegative(currentItem, () => DecrementQualityIfNonZero(currentItem));
+                        break;
                 }
+            }
+        }
 
-                if (items[i].Name != "Sulfuras, Hand of Ragnaros")
-                {
-                    items[i].SellIn = items[i].SellIn - 1;
-                }
+        static void DecrementSellinAndDoIfNegative(Item currentItem, Action todo)
+        {
+            currentItem.SellIn--;
 
-                if (items[i].SellIn < 0)
-                {
-                    if (items[i].Name != "Aged Brie")
+            if (currentItem.SellIn < 0)
+            {
+                todo();
+            }
+        }
+
+        static int QualityAdjustment(Item currentItem)
+        {
+            switch (currentItem.Name)
+            {
+                case "Aged Brie":
+                    return 1;
+
+                case "Backstage passes to a TAFKAL80ETC concert":
+                    if (currentItem.SellIn <= 5)
                     {
-                        if (items[i].Name != "Backstage passes to a TAFKAL80ETC concert")
-                        {
-                            if (items[i].Quality > 0)
-                            {
-                                if (items[i].Name != "Sulfuras, Hand of Ragnaros")
-                                {
-                                    items[i].Quality = items[i].Quality - 1;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            items[i].Quality = items[i].Quality - items[i].Quality;
-                        }
+                        return 3;
                     }
-                    else
+                    if (currentItem.SellIn <= 10)
                     {
-                        if (items[i].Quality < 50)
-                        {
-                            items[i].Quality = items[i].Quality + 1;
-                        }
+                        return 2;
                     }
-                }
+
+                    return 1;
+
+                default:
+                    throw new Exception("Unknown case");
+            }
+        }
+
+        private static void DecrementQualityIfNonZero(Item currentItem)
+        {
+            if (currentItem.Quality > 0)
+            {
+                currentItem.Quality = currentItem.Quality - 1;
+            }
+        }
+
+        private static void AdjustQualityIfLessThan50(Item currentItem, int amount = 1)
+        {
+            if (currentItem.Quality < 50)
+            {
+                currentItem.Quality = currentItem.Quality + amount;
             }
         }
     }
